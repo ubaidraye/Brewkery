@@ -59,7 +59,7 @@ Unit tests cover the pricing and cart total logic: option adjustments, quantity,
 
 1. **Summary card placement.** On the Cart screen, Gemini placed the summary card right after the item cards, so it appeared near the top instead of at the bottom. I fixed it by giving the items column `Modifier.weight(1f)`, so the list takes the remaining space and the summary card stays at the bottom.
 2. **Status bar spacing.** The generated screens had wrong spacing under the status bar. which I fixed by applying the status bar padding to the .
-
+3. **Reusable Components** Gemini didn't extract composable components into separate reusable file it just created a single file containing all the composable which took about 800 lines, after extracting the composables, the lines dropped to about 90 lines! which increases readability and promotes separation of concerns
 ## Notes
 
 - The cart is held in memory, so it resets when the app closes. No local database is used, as the brief allows.
