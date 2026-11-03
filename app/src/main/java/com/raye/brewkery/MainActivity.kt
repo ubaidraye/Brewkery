@@ -1,105 +1,165 @@
 package com.raye.brewkery
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.raye.brewkery.data.model.OrderDetails
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.raye.brewkery.data.model.convertJsonToOrderDetails
+import com.raye.brewkery.data.model.convertOrderDetailsToJson
 import com.raye.brewkery.ui.cart.CartScreen
 import com.raye.brewkery.ui.detail.DetailScreen
 import com.raye.brewkery.ui.menu.MenuScreen
 import com.raye.brewkery.ui.order.OrderStatusScreen
 import com.raye.brewkery.ui.theme.BrewkeryTheme
-import com.raye.brewkery.ui.viewmodel.BrewkeryViewModel
-import com.raye.brewkery.ui.viewmodel.CartViewModel
-import com.raye.brewkery.ui.viewmodel.ItemDetailViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
-sealed interface Screen {
-    data object Menu : Screen
-    data class Detail(val itemId: Int) : Screen
-    data object Cart : Screen
-    data class OrderStatus(val orderDetails: OrderDetails) : Screen
+sealed class Screen(
+    val route: String
+) {
+    data object Menu : Screen("home")
+    data object Detail : Screen("detail/{itemId}") {
+        fun createRoute(itemId: Int): String = "detail/$itemId"
+    }
+
+    data object Cart : Screen("cart")
+    data object OrderStatus : Screen("orderStatus/{orderDetailsJson}") {
+        fun createRoute(json: String) = "orderStatus/$json"
+    }
 }
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private val menuViewModel: BrewkeryViewModel by viewModels()
-    private val itemDetailViewModel: ItemDetailViewModel by viewModels()
-    private val cartViewModel: CartViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             BrewkeryTheme {
-                BrewkeryApp(
-                    menuViewModel = menuViewModel,
-                    itemDetailViewModel = itemDetailViewModel,
-                    cartViewModel = cartViewModel
-                )
+                BrewkeryApp()
             }
         }
     }
 }
 
 @Composable
-fun BrewkeryApp(
-    menuViewModel: BrewkeryViewModel,
-    itemDetailViewModel: ItemDetailViewModel,
-    cartViewModel: CartViewModel
-) {
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Menu) }
+fun BrewkeryApp() {
+    val navController = rememberNavController()
 
-    when (val screen = currentScreen) {
-        is Screen.Menu -> {
+    val onBackClick: () -> Unit = { navController.popBackStack() }
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Menu.route
+    ) {
+        composable(
+            route = Screen.Menu.route
+        ) {
             MenuScreen(
-                viewModel = menuViewModel,
-                onItemClick = { item ->
-                    currentScreen = Screen.Detail(item.id)
-                },
-                onCartClick = {
-                    currentScreen = Screen.Cart
-                }
+                onItemClick = { item -> navController.navigate(Screen.Detail.createRoute(item.id)) },
+                onCartClick = { navController.navigate(Screen.Cart.route) }
             )
         }
 
-        is Screen.Detail -> {
+        composable(
+            route = Screen.Detail.route,
+            arguments = listOf(
+                navArgument("itemId") { type = NavType.IntType }
+            )
+        ) {
+            val itemId = it.arguments?.getInt("itemId") ?: 0
+
             DetailScreen(
-                itemId = screen.itemId,
-                viewModel = itemDetailViewModel,
-                onBackClick = {
-                    currentScreen = Screen.Menu
-                }
+                itemId = itemId,
+                onBackClick = onBackClick,
             )
         }
 
-        is Screen.Cart -> {
+        composable(
+            route = Screen.Cart.route
+        ) {
             CartScreen(
-                viewModel = cartViewModel,
-                onBackClick = {
-                    currentScreen = Screen.Menu
-                },
+                onBackClick = onBackClick,
                 onOrderPlaced = { orderDetails ->
-                    currentScreen = Screen.OrderStatus(orderDetails)
-                }
+                    val jsonString = convertOrderDetailsToJson(orderDetails)
+                    val sanitizedJson = Uri.encode(jsonString)
+                    navController.navigate(Screen.OrderStatus.createRoute(sanitizedJson))
+                },
             )
         }
 
-        is Screen.OrderStatus -> {
+        composable(
+            route = Screen.OrderStatus.route,
+            arguments = listOf(
+                navArgument("orderDetailsJson") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            // 1. Fetch the raw argument string
+            val argumentPayload = backStackEntry.arguments?.getString("orderDetailsJson") ?: ""
+
+            // 2. Decode it back using Android's native Uri tool to restore full URLs
+            val rawJson = Uri.decode(argumentPayload)
+
+            // 3. De-serialize back to your complex object tree
+            val orderDetails = convertJsonToOrderDetails(rawJson)
+
             OrderStatusScreen(
-                orderDetails = screen.orderDetails,
+                orderDetails = orderDetails,
                 onBackToMenu = {
-                    currentScreen = Screen.Menu
+                    navController.navigate(Screen.Menu.route) {
+                        popUpTo(Screen.Menu.route) { inclusive = true }
+                    }
                 }
             )
         }
     }
+
+//    when (val screen = currentScreen) {
+//        is Screen.Menu -> {
+//            MenuScreen(
+//                viewModel = menuViewModel,
+//                onItemClick = { item ->
+//                    currentScreen = Screen.Detail(item.id)
+//                },
+//                onCartClick = {
+//                    currentScreen = Screen.Cart
+//                }
+//            )
+//        }
+//
+//        is Screen.Detail -> {
+//            DetailScreen(
+//                itemId = screen.itemId,
+//                viewModel = itemDetailViewModel,
+//                onBackClick = {
+//                    currentScreen = Screen.Menu
+//                }
+//            )
+//        }
+//
+//        is Screen.Cart -> {
+//            CartScreen(
+//                viewModel = cartViewModel,
+//                onBackClick = {
+//                    currentScreen = Screen.Menu
+//                },
+//                onOrderPlaced = { orderDetails ->
+//                    currentScreen = Screen.OrderStatus(orderDetails)
+//                }
+//            )
+//        }
+//
+//        is Screen.OrderStatus -> {
+//            OrderStatusScreen(
+//                orderDetails = screen.orderDetails,
+//                onBackToMenu = {
+//                    currentScreen = Screen.Menu
+//                }
+//            )
+//        }
+//    }
 }

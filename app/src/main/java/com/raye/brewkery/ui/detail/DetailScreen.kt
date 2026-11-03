@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.raye.brewkery.data.model.BrewkeryItem
 import com.raye.brewkery.data.model.MilkOption
@@ -73,7 +74,7 @@ private val SelectedOptionBg = Color(0xFFFDF0EB)
 @Composable
 fun DetailScreen(
     itemId: Int,
-    viewModel: ItemDetailViewModel,
+    viewModel: ItemDetailViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {

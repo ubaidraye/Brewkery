@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.raye.brewkery.data.model.CartItem
 import com.raye.brewkery.data.model.OrderDetails
 import com.raye.brewkery.domain.OrderSummary
@@ -61,10 +62,10 @@ import java.util.Locale
 
 @Composable
 fun CartScreen(
-    viewModel: CartViewModel,
+    modifier: Modifier = Modifier,
+    viewModel: CartViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
-    onOrderPlaced: (OrderDetails) -> Unit,
-    modifier: Modifier = Modifier
+    onOrderPlaced: (OrderDetails) -> Unit
 ) {
     val cartItems by viewModel.cartItems.collectAsState()
     val summary by viewModel.orderSummary.collectAsState()
@@ -227,7 +228,13 @@ private fun CartContentView(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Place Order Now • $${String.format(Locale.US, "%.2f", summary.totalPayable)}",
+                        text = "Place Order Now • $${
+                            String.format(
+                                Locale.US,
+                                "%.2f",
+                                summary.totalPayable
+                            )
+                        }",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = CardSurface

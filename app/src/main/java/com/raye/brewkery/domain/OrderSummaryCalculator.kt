@@ -1,8 +1,11 @@
 package com.raye.brewkery.domain
 
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+
+@Serializable
 data class OrderSummary(
     val subtotal: Double,
     val deliveryFee: Double,

@@ -58,6 +58,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.raye.brewkery.data.model.BrewkeryItem
 import com.raye.brewkery.data.model.Category
@@ -82,7 +83,7 @@ import java.util.Locale
 @Composable
 fun MenuScreen(
     modifier: Modifier = Modifier,
-    viewModel: BrewkeryViewModel,
+    viewModel: BrewkeryViewModel = hiltViewModel(),
     onItemClick: (BrewkeryItem) -> Unit,
     onCartClick: () -> Unit = {}
 ) {

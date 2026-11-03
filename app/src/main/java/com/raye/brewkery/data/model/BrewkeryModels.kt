@@ -1,6 +1,7 @@
 package com.raye.brewkery.data.model
 
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
 /**
  * Root data response from `data.json`
@@ -38,6 +39,7 @@ data class Category(
 /**
  * Food/Beverage Item model returned in lists or single item details (`api/items/{id}.json`)
  */
+@Serializable
 data class BrewkeryItem(
     @SerializedName("id") val id: Int,
     @SerializedName("category_id") val categoryId: String,
@@ -58,6 +60,7 @@ data class BrewkeryItem(
 /**
  * Customization options available for an item
  */
+@Serializable
 data class Customizations(
     @SerializedName("sizes") val sizes: List<SizeOption>,
     @SerializedName("sugar_levels") val sugarLevels: List<String>,
@@ -67,6 +70,7 @@ data class Customizations(
 /**
  * Size selection customization option
  */
+@Serializable
 data class SizeOption(
     @SerializedName("id") val id: String,
     @SerializedName("label") val label: String,
@@ -76,6 +80,7 @@ data class SizeOption(
 /**
  * Milk / Topping customization option
  */
+@Serializable
 data class MilkOption(
     @SerializedName("id") val id: String,
     @SerializedName("name") val name: String,
