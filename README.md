@@ -53,13 +53,16 @@ Unit tests cover the pricing and cart total logic: option adjustments, quantity,
 1. "I'm building a native Android app called Brewkery in Kotlin with Jetpack Compose, MVVM, Retrofit, Coroutines, StateFlow, Coil and Navigation Compose. Here is the JSON from the API: [data.json]. Create the data classes, the Retrofit service, a repository that returns a Result, and a ViewModel exposing a UiState sealed class via StateFlow. Do not build any UI yet."
 2. "Build the Menu screen in Jetpack Compose: a store banner, a horizontal category chips row that filters the list, and a list of items showing thumbnail, badge, title, rating and base price. Show a loading indicator and an error message with a Retry button."
 3. "Build the Cart screen with item quantity controls, Clear Cart, and a summary with subtotal, delivery fee and tax (8% of the subtotal only, rounded to 2 decimals). Place Order clears the cart, generates a ticket ID and navigates to the Order Status screen."
-   **What AI got right:** Gemini built the Menu and Item Detail screens correctly: the category filtering, the item list with images loaded through Coil, and the live price recalculation for size, milk and sugar options.
+
+**What AI got right:** Gemini built the Menu and Item Detail screens correctly: the category filtering, the item list with images loaded through Coil, and the live price recalculation for size, milk and sugar options.
 
 **What AI got wrong, and how I fixed it:**
 
 1. **Summary card placement.** On the Cart screen, Gemini placed the summary card right after the item cards, so it appeared near the top instead of at the bottom. I fixed it by giving the items column `Modifier.weight(1f)`, so the list takes the remaining space and the summary card stays at the bottom.
-2. **Status bar spacing.** The generated screens had wrong spacing under the status bar. which I fixed by applying the status bar padding to the .
-
+2. **Status bar spacing.** The header bar had no top padding, so it was drawn
+   behind the status bar. I fixed it by adding `Modifier.statusBarsPadding()`
+   to the header composable, and applied the same fix on the Cart screen.
+3. **Reusable Components** Gemini didn't extract composable components into separate reusable file it just created a single file containing all the composable which took about 800 lines, after extracting the composables, the lines dropped to about 90 lines! which increases readability and promotes separation of concerns
 ## Notes
 
 - The cart is held in memory, so it resets when the app closes. No local database is used, as the brief allows.
