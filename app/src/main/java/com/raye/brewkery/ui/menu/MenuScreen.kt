@@ -1,5 +1,10 @@
 package com.raye.brewkery.ui.menu
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -59,6 +65,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.raye.brewkery.data.model.BrewkeryItem
 import com.raye.brewkery.data.model.Category
@@ -72,6 +79,7 @@ import com.raye.brewkery.ui.theme.CardSurface
 import com.raye.brewkery.ui.theme.CreamBackground
 import com.raye.brewkery.ui.theme.EspressoDark
 import com.raye.brewkery.ui.theme.StarYellow
+import com.raye.brewkery.ui.theme.TerracottaPressed
 import com.raye.brewkery.ui.theme.TerracottaPrimary
 import com.raye.brewkery.ui.theme.TextPrimary
 import com.raye.brewkery.ui.theme.TextSecondary
@@ -79,7 +87,6 @@ import com.raye.brewkery.ui.theme.TrackButtonGreen
 import com.raye.brewkery.ui.viewmodel.BrewkeryUiState
 import com.raye.brewkery.ui.viewmodel.BrewkeryViewModel
 import java.util.Locale
-
 @Composable
 fun MenuScreen(
     modifier: Modifier = Modifier,
@@ -87,12 +94,28 @@ fun MenuScreen(
     onItemClick: (BrewkeryItem) -> Unit,
     onCartClick: () -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val cartCount by viewModel.cartItemCount.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val cartCount by viewModel.cartItemCount.collectAsStateWithLifecycle()
+
+    // Wire up the live state flow calculation mapping
+    val cartTotalPrice by viewModel.cartTotalPrice.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = CreamBackground
+        containerColor = CreamBackground,
+        bottomBar = {
+            AnimatedVisibility(
+                visible = cartCount > 0,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
+            ) {
+                ProceedToCheckoutCard(
+                    cartCount = cartCount,
+                    totalPrice = cartTotalPrice, // Emits strings like "$9.40" live!
+                    onCheckoutClick = onCartClick
+                )
+            }
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -126,6 +149,89 @@ fun MenuScreen(
         }
     }
 }
+
+@Composable
+private fun ProceedToCheckoutCard(
+    cartCount: Int,
+    totalPrice: String,
+    onCheckoutClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = Color.Transparent // Allows Scaffold background blending
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(89.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp) // Bottom spacing padding cushion
+                .clip(RoundedCornerShape(20.dp))
+                .background(EspressoDark) // Uses your pre-defined dark brown color token
+                .clickable { onCheckoutClick() }
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Left Side: Item Counter Circle and Total Valuation Details
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(TerracottaPrimary, shape = CircleShape) // Red-orange badge fill
+                ) {
+                    Text(
+                        text = cartCount.toString(),
+                        color = CardSurface,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        text = "View Your Cart",
+                        color = CardSurface.copy(alpha = 0.6f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = totalPrice,
+                        color = CardSurface,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // Right Side: Forward CTA Button
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = "Proceed to Checkout",
+                    color = TerracottaPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Proceed to checkout",
+                    tint = CreamBackground,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun MenuContentView(
